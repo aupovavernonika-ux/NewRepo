@@ -1,0 +1,236 @@
+#include <iostream>
+#include <cstring>
+#include <fstream>
+using namespace std;
+
+const int SIZE = 20;
+enum comfort { lux, semilux, standart, econom };
+
+struct room_options {
+    bool wifi, tv, conditioner, sea_view;
+};
+
+void printOptions(const room_options& o) {
+    cout << "Wi-Fi - " << (o.wifi ? "есть" : "нет")
+        << ", TV - " << (o.tv ? "есть" : "нет")
+        << ", Кондиционер - " << (o.conditioner ? "есть" : "нет")
+        << ", Окна на море - " << (o.sea_view ? "есть" : "нет");
+}
+
+struct room {
+    char hotel_name[50];
+    int room_number;
+    comfort comfort;
+    int number_of_people;
+    double price;
+    room_options options;
+};
+
+room* init() {
+    room* rooms = new room[SIZE];
+    rooms[0] = { "Ocean Plaza", 102, semilux, 3, 180.0, {1,0,1,1} };
+    rooms[1] = { "Grand Hotel", 103, standart, 2, 120.0, {0,1,0,0} };
+    rooms[2] = { "City Inn", 104, econom, 1, 70.0, {0,0,0,0} };
+    rooms[3] = { "Royal Plaza", 105, lux, 4, 320.0, {1,1,1,1} };
+    rooms[4] = { "Seaside Resort", 106, semilux, 3, 210.0, {1,1,1,1} };
+    rooms[5] = { "Plaza Central", 107, standart, 2, 95.0, {1,0,1,0} };
+    rooms[6] = { "Mountain View", 108, econom, 2, 85.0, {0,0,1,0} };
+    rooms[7] = { "Star Plaza", 109, lux, 2, 275.0, {1,1,1,0} };
+    rooms[8] = { "Budget Hotel", 110, econom, 1, 45.0, {0,0,0,0} };
+    rooms[9] = { "Luxury Plaza", 111, lux, 3, 350.0, {1,1,1,1} };
+    rooms[10] = { "Harbor Inn", 112, standart, 2, 110.0, {1,1,0,1} };
+    rooms[11] = { "Sunny Plaza", 113, semilux, 4, 195.0, {1,0,1,1} };
+    rooms[12] = { "Old Town", 114, standart, 2, 90.0, {0,1,0,0} };
+    rooms[13] = { "Plaza Del Mar", 115, lux, 5, 400.0, {1,1,1,1} };
+    rooms[14] = { "East Side", 116, econom, 1, 55.0, {0,0,0,0} };
+    rooms[15] = { "West Plaza", 117, semilux, 3, 160.0, {1,1,0,1} };
+    rooms[16] = { "North Hotel", 118, standart, 2, 100.0, {1,0,0,0} };
+    rooms[17] = { "South Plaza", 119, lux, 2, 290.0, {1,1,1,1} };
+    rooms[18] = { "Park Plaza", 120, standart, 3, 140.0, {1,1,1,0} };
+    rooms[19] = { "Sunset Plaza", 101, lux, 2, 250.0, {1,1,1,1} };
+    return rooms;
+}
+
+bool isPlaza(const room& r) {
+    int len = strlen(r.hotel_name);
+    return len >= 5 && strcmp(r.hotel_name + len - 5, "Plaza") == 0;
+}
+
+void bubbleSort(room arr[], int n, bool (*less)(const room&, const room&)) {
+    for (int i = 0; i < n - 1; ++i) {
+        for (int j = 0; j < n - i - 1; ++j) {
+            if (!less(arr[j], arr[j + 1])) {
+                room t = arr[j];
+                arr[j] = arr[j + 1];
+                arr[j + 1] = t;
+            }
+        }
+    }
+}
+
+bool byPrice(const room& a, const room& b) { return a.price < b.price; }
+bool byNumber(const room& a, const room& b) { return a.room_number < b.room_number; }
+
+void printRoom(const room& r) {
+    cout << "Отель: " << r.hotel_name << ", №" << r.room_number << endl;
+    cout << "Комфортность: ";
+    switch (r.comfort) {
+    case lux: cout << "люкс"; break;
+    case semilux: cout << "полулюкс"; break;
+    case standart: cout << "стандарт"; break;
+    case econom: cout << "эконом"; break;
+    }
+    cout << ", количество человек: " << r.number_of_people << ", цена: " << r.price << "$.\n" << "Опции: ";
+    printOptions(r.options);
+    cout << endl;
+}
+void printRooms(const room arr[], int size) {
+    if (size == 0) cout << "Нет номеров для отображения." << endl;
+    else for (int i = 0; i < size; ++i) printRoom(arr[i]);
+}
+
+int filter(const room src[], int n, room dst[], bool (*pred)(const room&)) {
+    int count = 0;
+    for (int i = 0; i < n; ++i)
+        if (pred(src[i])) dst[count++] = src[i];
+    return count;
+}
+
+void printByNumber(const room arr[], int n, int num) {
+    for (int i = 0; i < n; ++i)
+        if (arr[i].room_number == num) {
+            cout << "\nДанные номера " << num << ":\n";
+            printRoom(arr[i]);
+            return;
+        }
+    cout << "Номер " << num << " не найден.\n";
+}
+
+bool hasSeaView(const room& r) { return r.options.sea_view; }
+
+void printThreeCheapest(const room arr[], int n) {
+    if (n < 3) { cout << "Меньше трёх номеров.\n"; return; }
+    cout << "\nТри самых дешёвых:\n";
+    for (int i = 0; i < 3; ++i) {
+        cout << i + 1 << ". Отель " << arr[i].hotel_name << ", №" << arr[i].room_number
+            << ", цена " << arr[i].price << "$. Опции: ";
+        printOptions(arr[i].options);
+        cout << endl;
+    }
+}
+
+void changeRoom(room arr[], int n, int num) {
+    for (int i = 0; i < n; ++i) {
+        if (arr[i].room_number == num) {
+            cout << "\nВведите новые данные для номера " << num << ":\n";
+            cout << "Название отеля: ";
+            cin.getline(arr[i].hotel_name, 50);
+            cout << "Номер комнаты: ";
+            cin >> arr[i].room_number;
+            int comfortChoice;
+            cout << "Комфортность (0 - люкс, 1 - полулюкс, 2 - стандарт, 3 - эконом): ";
+            cin >> comfortChoice;
+            arr[i].comfort = static_cast<comfort>(comfortChoice);
+            cout << "Количество человек: ";
+            cin >> arr[i].number_of_people;
+            cout << "Стоимость: ";
+            cin >> arr[i].price;
+            cout << "Wi-Fi (1 - есть, 0 - нет): ";
+            cin >> arr[i].options.wifi;
+            cout << "TV (1 - есть, 0 - нет): ";
+            cin >> arr[i].options.tv;
+            cout << "Кондиционер (1 - есть, 0 - нет): ";
+            cin >> arr[i].options.conditioner;
+            cout << "Окна на море (1 - есть, 0 - нет): ";
+            cin >> arr[i].options.sea_view;
+            cout << "\nДанные успешно обновлены. Новая информация о номере:\n";
+            printRoom(arr[i]);
+            return;
+        }
+    }
+    cout << "Номер " << num << " не найден.\n";
+}
+
+//ЗАДАНИЕ 1: чтение из myfile.txt (текстовый файл) 
+void updateSeaViewFromFile(const char* filename, room arr[], int n) {
+    ifstream fin(filename);
+    if (!fin.is_open()) {
+        cout << "Не удалось открыть файл " << filename << " для чтения.\n";
+        return;
+    }
+    char name[50];
+    int value;
+    while (fin >> name >> value) {
+        for (int i = 0; i < n; ++i) {
+            if (strcmp(arr[i].hotel_name, name) == 0) {
+                arr[i].options.sea_view = (value != 0);
+                break;
+            }
+        }
+    }
+    fin.close();
+    cout << "Данные о виде на море обновлены из файла " << filename << endl;
+}
+
+//ЗАДАНИЕ 2: запись/чтение бинарного файла 
+void saveRoomsToBinary(const char* filename, const room arr[], int count) {
+    ofstream fout(filename, ios::binary);
+    if (!fout.is_open()) {
+        cout << "Ошибка открытия файла " << filename << " для записи\n";
+        return;
+    }
+    fout.write((const char*)(&count), sizeof(count));
+    fout.write((const char*)(arr), count * sizeof(room));
+    fout.close();
+    cout << "Сохранено " << count << " записей в бинарный файл " << filename << endl;
+}
+
+int loadRoomsFromBinary(const char* filename, room arr[], int maxSize) {
+    ifstream fin(filename, ios::binary);
+    if (!fin.is_open()) {
+        cout << "Ошибка открытия файла " << filename << " для чтения\n";
+        return 0;
+    }
+    int count = 0;
+    fin.read((char*)(&count), sizeof(count));
+    if (count > maxSize) {
+        cout << "Предупреждение: в файле " << count << " записей, массив вмещает только " << maxSize << ". Будет загружено " << maxSize << " записей.\n";
+        count = maxSize;
+    }
+    fin.read((char*)(arr), count * sizeof(room));
+    fin.close();
+    cout << "Загружено " << count << " записей из бинарного файла " << filename << endl;
+    return count;
+}
+
+int main() {
+    setlocale(LC_ALL, "");
+    room* all = init();
+    updateSeaViewFromFile(R("C:\Users\User\Desktop\myfile.txt)", all, SIZE);
+    room plaza[20], sea[20];
+    int countPlaza = filter(all, SIZE, plaza, isPlaza);
+    int countSeaV = filter(all, SIZE, sea, hasSeaView);
+
+    cout << "\n=== Отели, название которых оканчивается на 'Plaza' ===\n";
+    printRooms(plaza, countPlaza);
+
+    bubbleSort(plaza, countPlaza, byPrice);
+    cout << "\n=== После сортировки по цене ===\n";
+    printRooms(plaza, countPlaza);
+
+    printByNumber(plaza, countPlaza, 102);
+    printThreeCheapest(plaza, countPlaza);
+
+    cout << "\n=== Номера с окнами на море ===\n";
+    printRooms(sea, countSeaV);
+
+    // Задание 2: запись и чтение бинарного файла (отфильтрованный массив plaza)
+    saveRoomsToBinary("rooms.bin", plaza, countPlaza);
+    room loadedPlaza[20];
+    int loadedCount = loadRoomsFromBinary("rooms.bin", loadedPlaza, 20);
+    cout << "\n=== Проверка: прочитано из бинарного файла ===\n";
+    printRooms(loadedPlaza, loadedCount);
+
+    delete[] all;
+    return 0;
+}
